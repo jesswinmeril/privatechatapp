@@ -1,0 +1,160 @@
+<!-- my_flask_app/app/templates/login.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Private Chat App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+
+  <div id="toast-container"></div>
+
+  <!-- 🔹 Top Navigation Bar -->
+  <div id="navBar" style="display: none;">
+    <button id="navDashboard">Dashboard</button>
+    <button id="navChat">Chat</button>
+    <button id="navAccount">Account</button>
+    <button id="navUsers" style="display: none;">Users</button> <!-- Add this line -->
+    <button id="navAdmin" style="display: none;">Admin Panel</button>
+    <button id="logoutButton">Logout</button>
+  </div>
+
+  <!-- 🔸 Main Content Box -->
+  <div class="container">
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm">
+      <h1>Login</h1>
+      <div class="form-group">
+        <input type="text" id="username" placeholder="Username" required />
+      </div>
+      <div class="form-group">
+        <input type="password" id="password" placeholder="Password" required />
+      </div>
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- REGISTRATION SECTION -->
+    <div id="registerSection" style="display: none; margin-top: 20px;">
+      <h2>Create Account</h2>
+      <form id="registerForm">
+        <div class="form-group">
+          <input type="text" id="regUsername" placeholder="Username" required />
+        </div>
+        <div class="form-group">
+          <input type="password" id="regPassword" placeholder="Password" required />
+        </div>
+        <button type="submit">Register</button>
+      </form>
+    </div>
+    <button id="toggleRegister" type="button" style="margin-top: 20px;">Create an account</button>
+
+    <!-- SPA SECTIONS -->
+
+    <!-- Dashboard -->
+    <div id="dashboardSection" class="spa-section" style="display: none; margin-top: 24px;">
+      <h2>Welcome, <span id="dashboardUsername"></span>!</h2>
+      <p>Your role: <span id="dashboardRole"></span>
+        <span id="masterAdminBadge" style="color:#16a34a; font-weight:bold;"></span>
+      </p>
+      <!-- Show Chat ID prominently -->
+      <div class="user-id-box">
+        <strong>Your Chat ID:</strong>
+        <span id="dashboardUserId" style="font-family:monospace;">[id_placeholder]</span>
+        <button id="copyIdBtn" title="Copy Chat ID">Copy</button>
+      </div>
+    </div>
+
+    <div id="usersSection" class="spa-section" style="display: none; margin-top: 24px;">
+      <h3>All Users</h3>
+      <div id="allUsersList" style="margin-top: 12px; font-size: 0.96em;">Loading...</div>
+    </div>
+
+    <!-- Chat Section -->
+    <div id="chatSection" class="spa-section" style="display: none; margin-top: 24px;">
+      <h2>Private Chat</h2>
+      <!-- Input for entering another user's ID to chat with -->
+      <div id="startChatForm" class="chat-card">
+        <label for="targetUserId"><b>Enter User's Chat ID:</b></label>
+        <input type="text" id="targetUserId" placeholder="Enter Chat ID to connect" maxlength="32" />
+        <button id="startChatBtn">Start Chat</button>
+      </div>
+      <!-- Placeholder for current chat info -->
+      <div id="chatWithBox" style="display:none; margin:16px 0;">
+        <strong>Chatting with:</strong> <span id="currentChatUser"></span>
+        <button id="endChatBtn" style="margin-left:14px;">End Chat</button>
+      </div>
+      <!-- Chat window -->
+      <div id="chatWindow" style="display:none;">
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-box">
+          <input id="chatInput" type="text" placeholder="Type your message..." maxlength="300" autocomplete="off" />
+          <button id="chatSendBtn">Send</button>
+          <button id="reportChatBtn" title="Report this chat" style="margin-left:8px; display:none;">Report</button>
+        </div>
+        <!-- Placeholder for Auto-Moderator messages -->
+        <div id="autoModBox" class="automod-box" style="display:none;">[AutoMod will appear here]</div>
+      </div>
+      <div id="chatInfo" style="margin: 12px 0; color:#6b7280;"></div>
+    </div>
+
+        <!-- Account Section -->
+    <div id="accountSection" class="spa-section" style="display: none; margin-top: 24px;">
+      <h3>Update Password</h3>
+      <button id="showUpdatePasswordBtn" style="margin-bottom: 12px;">Update Password</button> <!-- ✅ This is critical -->
+      <div id="accountManagement" style="display: none;">
+        <form id="updatePasswordForm">
+          <input type="password" id="currentPassword" placeholder="Current Password" required minlength="6" />
+          <input type="password" id="newPassword" placeholder="New Password (min 6 chars)" required minlength="6" />
+          <button type="submit">Update Password</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminSection" class="spa-section" style="display: none; margin-top: 24px;">
+      <h2>Admin Panel</h2>
+      <div id="adminPanelContents">
+        <!-- Placeholders: admins can enter a user ID to join any chat, and see report notifications -->
+        <div class="admin-card">
+          <label><b>Join User's Chat by ID:</b></label>
+          <input type="text" id="adminJoinUserId" placeholder="User Chat ID" maxlength="32" />
+          <button id="adminJoinBtn">Join Chat</button>
+        </div>
+        <div id="adminReportsList" class="report-list" style="margin-top: 16px;">
+          <strong>Report Notifications:</strong>
+          <div id="reportItems">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <!-- Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reportModalLabel">Report User</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <textarea id="reportReasonInput" class="form-control" placeholder="Describe the issue..." rows="4"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button id="submitReportBtn" type="button" class="btn btn-primary">Submit Report</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- closing .container -->
+
+  <!-- Load scripts AFTER modal and all HTML -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='login.js') }}"></script>
+</body>
+</html>

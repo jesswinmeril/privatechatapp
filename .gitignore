@@ -1,0 +1,16 @@
+# my_flask_app/.gitignore
+
+venv/
+.env
+
+instance/
+*.sqlite3
+
+__pycache__/
+*.pyc
+
+.DS_Store
+.idea/
+*.log
+
+*.db

@@ -1,0 +1,382 @@
+/* my_flask_app/app/static/styles.css */
+
+/* Global Reset & Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #dbd5d5;
+  color: #1f2937;
+}
+
+/* Container */
+.container {
+  max-width: 420px;
+  width: 90%;
+  margin: 40px auto;
+  background: #999797;
+  padding: 28px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* Forms */
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+input[type="text"],
+input[type="password"] {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 1em;
+  background-color: #eeeeee;
+  transition: border 0.2s;
+}
+
+input:focus {
+  border-color: #555559;
+  outline: none;
+}
+
+/* Buttons */
+button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  background-color: #1f2937;
+  color: white;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #374151;
+}
+
+button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Top Navigation Bar */
+#navBar {
+  background: #1f2937;
+  padding: 14px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+#navBar button {
+  background-color: #ffffff;
+  color: #1f2937;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+#navBar button:hover {
+  background-color: #f3f4f6;
+}
+
+/* SPA Section Styles */
+.spa-section {
+  margin-top: 24px;
+}
+
+/* User ID Display */
+.user-id-box {
+  background: #f3f4f6;
+  padding: 14px 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+#copyIdBtn {
+  background: #374151;
+  color: #fff;
+  padding: 3px 9px;
+  border-radius: 4px;
+  margin-left: 4px;
+  font-size: 0.95em;
+}
+
+#copyIdBtn:hover {
+  background: #111827;
+}
+
+/* Chat UI + Admin Cards */
+.chat-card,
+.admin-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 14px 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(219, 234, 254, 0.24);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Chat Window */
+#chatWindow {
+  background: #f1f5f9;
+  border-radius: 8px;
+  min-height: 200px;
+  margin-top: 16px;
+  padding: 12px 10px 8px 10px;
+  box-shadow: 0 2px 10px rgba(199, 210, 254, 0.14);
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  height: 180px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  font-size: 1em;
+}
+
+/* Chat input */
+.chat-input-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#chatInput {
+  flex: 1;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 9px 10px;
+  font-size: 1em;
+}
+
+#chatSendBtn,
+#endChatBtn,
+#reportChatBtn,
+#adminJoinBtn {
+  background: #555559;
+  color: #fff;
+  padding: 7px 14px;
+  border-radius: 5px;
+}
+
+#chatSendBtn:hover,
+#endChatBtn:hover,
+#adminJoinBtn:hover,
+#reportChatBtn:hover {
+  background: #8e8e9c;
+}
+
+/* AutoModerator Box */
+.automod-box {
+  background: #ffe4e6;
+  border-left: 5px solid #ed3d21;
+  border-radius: 6px;
+  padding: 7px 14px;
+  color: #f0533a;
+  font-size: 0.98em;
+  margin-top: 9px;
+}
+
+/* Report Area */
+.report-list {
+  font-size: 0.97em;
+  background: #fef9c3;
+  padding: 10px 8px;
+  border-radius: 6px;
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+/* Toast Notifications */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.toast {
+  background-color: #555559;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  font-size: 0.95em;
+  animation: fadeIn 0.3s ease-out, fadeOut 0.3s ease-in 2.8s;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.toast.success {
+  background-color: #16a34a;
+}
+
+.toast.error {
+  background-color: #ed3d21;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 540px) {
+  .container {
+    padding: 16px 2vw;
+  }
+
+  #navBar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 0;
+  }
+
+  .user-id-box,
+  .chat-card,
+  .admin-card,
+  .report-list,
+  #chatWindow {
+    padding: 8px 6px;
+    font-size: 0.97em;
+  }
+}
+
+.chat-message.you {
+  text-align: right;
+  color: #555559;
+}
+
+.chat-message.they {
+  text-align: left;
+  color: #111827;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.promoteBtn {
+  background-color: #83f03a;
+  color: #000;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-left: 5px;
+}
+
+.promoteBtn:hover {
+  background-color: #66ba2d;
+}
+
+.promoteBtn.demote {
+  background-color: #ed3d21;
+  color: #fff;
+}
+
+.promoteBtn.demote:hover {
+  background-color: #b91c1c;
+}
+
+.deleteUserBtn {
+  background-color: #ed3d21;
+  color: #fff;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.deleteUserBtn:hover {
+  background-color: #b91c1c;
+}
+
+#reportChatBtn {
+  background-color: #facc15; 
+  color: #000;
+}
+
+#reportChatBtn:hover {
+  background-color: #eab308;
+}
+
+/* Report List Item */
+.report-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.report-list th, .report-list td {
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  vertical-align: top;
+}
+
+.report-list td {
+  white-space: pre-wrap; /* Preserve chat logs formatting */
+}
