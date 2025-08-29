@@ -66,6 +66,8 @@ root/ 
 │   │   └── styles.css
 │   └── templates/
 │       └── login.html
+├── create_master_admin_columns.py
+├── migrate_reports_table.py
 ├── .env 
 ├── .gitignore
 ├── requirements.txt
