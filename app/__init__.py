@@ -16,6 +16,7 @@ from .error_handlers import register_error_handlers
 from .sockets import register_socket_handlers
 from .db import db
 import logging
+from flask_migrate import Migrate
 
 socketio = SocketIO(cors_allowed_origins="*")  # Singleton SocketIO instance
 
@@ -24,6 +25,7 @@ def create_app():
     app.config.from_object(Config)
     
     db.init_app(app)  # Initialize SQLAlchemy with app
+    migrate = Migrate(app, db) 
     
     app.logger.setLevel(logging.DEBUG)
 
