@@ -7,4 +7,4 @@ SQLAlchemy==2.0.34
 psycopg2-binary==2.9.10
 python-dotenv==0.21.0
 eventlet==0.40.2
-Werkzeug==2.3.4
+Werkzeug==3.0.3
