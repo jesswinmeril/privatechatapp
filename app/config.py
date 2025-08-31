@@ -11,6 +11,8 @@ class Config:
     JWT_BLACKLIST_ENABLED = True
     JWT_BLACKLIST_TOKEN_CHECKS = ["refresh"]
     CORS_HEADERS = "Content-Type"
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "postgresql://postgres:Resreq25!@db.zqeyqlqfdesnvyrnafze.supabase.co:5432/postgres")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class ProductionConfig(Config):
     SECRET_KEY = os.environ["SECRET_KEY"]  # No fallback, must be set
