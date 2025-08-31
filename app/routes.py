@@ -1,8 +1,8 @@
 # my_flask_app/app/routes.py
 
 from flask import Blueprint, request, jsonify, current_app, render_template
-from .db import get_db_connection
-import sqlite3
+from .db import db
+from .models import User, Report
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask_jwt_extended import (
@@ -14,6 +14,7 @@ from flask_jwt_extended import (
     verify_jwt_in_request
 )
 import secrets
+from sqlalchemy.exc import IntegrityError
 
 def generate_chat_id():
     return secrets.token_hex(4)  
@@ -31,19 +32,20 @@ def get_all_users():
     if claims.get("role") != "admin":
         return jsonify({"error": "Admins only."}), 403
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, username, role, chat_id, is_master_admin, is_banned, is_muted FROM users")
-    users = [
-        dict(
-            id=row["id"], username=row["username"], role=row["role"], chat_id=row["chat_id"], 
-            is_master_admin=row["is_master_admin"], is_banned=row["is_banned"], is_muted=row["is_muted"]
-        )
-        for row in cursor.fetchall()
+    users = User.query.all()
+    users_list = [
+        {
+            "id": user.id,
+            "username": user.username,
+            "role": user.role,
+            "chat_id": user.chat_id,
+            "is_master_admin": user.is_master_admin,
+            "is_banned": user.is_banned,
+            "is_muted": user.is_muted
+        }
+        for user in users
     ]
-    conn.close()
-    return jsonify({"users": users}), 200
-
+    return jsonify({"users": users_list}), 200
 
 # DELETE user (admin only)
 @bp.route("/delete_user", methods=["POST"])
@@ -61,17 +63,16 @@ def delete_user():
     if username == claims.get("username"):
         return jsonify({"error": "Admins cannot delete themselves."}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT is_master_admin FROM users WHERE username = ?", (username,))
-    row = cursor.fetchone()
-    if row and row["is_master_admin"]:
-        conn.close()
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    if user.is_master_admin:
         return jsonify({"error": "Cannot delete the master admin."}), 403
 
-    cursor.execute("DELETE FROM users WHERE username = ?", (username,))
-    conn.commit()
-    conn.close()
+    db.session.delete(user)
+    db.session.commit()
+
     return jsonify({"message": f"User '{username}' deleted."}), 200
 
 
@@ -97,7 +98,6 @@ def jwt_role_required(role):
         return decorator
     return wrapper
 
-
 # REGISTER
 @bp.route("/register", methods=["POST"])
 def register():
@@ -113,23 +113,22 @@ def register():
 
     chat_id = generate_chat_id()
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    new_user = User(
+        username=username,
+        password=generate_password_hash(password),
+        role=role,
+        chat_id=chat_id
+    )
     try:
-        cursor.execute(
-            "INSERT INTO users (username, password, role, chat_id) VALUES (?, ?, ?, ?)",
-            (username, generate_password_hash(password), role, chat_id)
-        )
-        conn.commit()
+        db.session.add(new_user)
+        db.session.commit()
         return jsonify({
             "message": f"Registered successfully as '{role}'.",
             "chat_id": chat_id,
         }), 201
-    except sqlite3.IntegrityError:
+    except IntegrityError:
+        db.session.rollback()
         return jsonify({"error": "Username already exists or chat ID conflict"}), 400
-    finally:
-        conn.close()
-
 
 # LOGIN
 @bp.route("/login", methods=["POST"])
@@ -138,25 +137,23 @@ def login():
     username = data.get("username", "").strip()
     password = data.get("password", "")
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
-    conn.close()
+    user = User.query.filter_by(username=username).first()
     
-    if user["is_banned"]:
+    if user is None:
+        return jsonify({"error": "Invalid username or password"}), 401
+
+    if user.is_banned:
         return jsonify({"error": "This account has been banned."}), 403
 
-
-    if not user or not check_password_hash(user["password"], password):
+    if not check_password_hash(user.password, password):
         return jsonify({"error": "Invalid username or password"}), 401
 
     identity = {
-        "user_id": user["id"],
-        "username": user["username"],
-        "role": user["role"],
-        "chat_id": user["chat_id"],
-        "is_master_admin": user["is_master_admin"]
+        "user_id": user.id,
+        "username": user.username,
+        "role": user.role,
+        "chat_id": user.chat_id,
+        "is_master_admin": user.is_master_admin
     }
 
     access_token = create_access_token(identity=identity)
@@ -187,18 +184,15 @@ def change_role():
     if username == claims.get("username"):
         return jsonify({"error": "You cannot change your own role."}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        return jsonify({"error": "User not found."}), 404
 
-    cursor.execute("SELECT is_master_admin FROM users WHERE username = ?", (username,))
-    row = cursor.fetchone()
-    if row and row["is_master_admin"]:
-        conn.close()
+    if user.is_master_admin:
         return jsonify({"error": "Cannot change role of another master admin."}), 403
 
-    cursor.execute("UPDATE users SET role = ? WHERE username = ?", (new_role, username))
-    conn.commit()
-    conn.close()
+    user.role = new_role
+    db.session.commit()
 
     return jsonify({"message": f"Role for '{username}' updated to '{new_role}'."}), 200
 
@@ -262,18 +256,13 @@ def update_password():
     if not new_password or len(new_password) < 6:
         return jsonify({"error": "Password must be at least 6 characters."}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT password FROM users WHERE id = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row or not check_password_hash(row["password"], current_password):
-        conn.close()
+    user = User.query.get(user_id)
+    if not user or not check_password_hash(user.password, current_password):
         return jsonify({"error": "Current password is incorrect."}), 401
 
-    cursor.execute("UPDATE users SET password = ? WHERE id = ?", 
-                   (generate_password_hash(new_password), user_id))
-    conn.commit()
-    conn.close()
+    user.password = generate_password_hash(new_password)
+    db.session.commit()
+
     return jsonify({"message": "Password updated successfully."}), 200
 
 
@@ -284,16 +273,20 @@ def all_reports():
     claims = get_jwt()
     if claims.get("role") != "admin":
         return jsonify({"error": "Admins only."}), 403
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM reports ORDER BY timestamp DESC")
-    reports = [
-        dict(id=row["id"], reporter_id=row["reporter_id"], reported_id=row["reported_id"],
-             reason=row["reason"], chat_log=row["chat_log"], timestamp=row["timestamp"])
-        for row in cursor.fetchall()
+    reports = Report.query.order_by(Report.timestamp.desc()).all()
+    reports_list = [
+        {
+            "id": r.id,
+            "reporter_id": r.reporter_id,
+            "reported_id": r.reported_id,
+            "reason": r.reason,
+            "chat_log": r.chat_log,
+            "timestamp": r.timestamp.isoformat()
+        }
+        for r in reports
     ]
-    conn.close()
-    return jsonify({"reports": reports}), 200
+    return jsonify({"reports": reports_list}), 200
+
 
 @bp.route("/admin_only", methods=["GET"])
 @jwt_required()
@@ -319,11 +312,12 @@ def ban_user():
     if not username:
         return jsonify({"error": "Username missing."}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET is_banned = 1 WHERE username = ?", (username,))
-    conn.commit()
-    conn.close()
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    user.is_banned = True
+    db.session.commit()
 
     return jsonify({"message": f"User '{username}' has been banned."}), 200
 
@@ -341,13 +335,15 @@ def mute_user():
     if not username:
         return jsonify({"error": "Username missing."}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET is_muted = 1 WHERE username = ?", (username,))
-    conn.commit()
-    conn.close()
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    user.is_muted = True
+    db.session.commit()
 
     return jsonify({"message": f"User '{username}' has been muted."}), 200
+
 
 # UNBAN USER (admin only)
 @bp.route("/unban_user", methods=["POST"])
@@ -362,11 +358,12 @@ def unban_user():
     if not username:
         return jsonify({"error": "Username missing."}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET is_banned = 0 WHERE username = ?", (username,))
-    conn.commit()
-    conn.close()
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    user.is_banned = False
+    db.session.commit()
 
     return jsonify({"message": f"User '{username}' has been unbanned."}), 200
 
@@ -384,10 +381,11 @@ def unmute_user():
     if not username:
         return jsonify({"error": "Username missing."}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET is_muted = 0 WHERE username = ?", (username,))
-    conn.commit()
-    conn.close()
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    user.is_muted = False
+    db.session.commit()
 
     return jsonify({"message": f"User '{username}' has been unmuted."}), 200

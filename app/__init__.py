@@ -14,6 +14,7 @@ from .jwt_handlers import (
 )
 from .error_handlers import register_error_handlers
 from .sockets import register_socket_handlers
+from .db import db
 import logging
 
 socketio = SocketIO(cors_allowed_origins="*")  # Singleton SocketIO instance
@@ -21,6 +22,8 @@ socketio = SocketIO(cors_allowed_origins="*")  # Singleton SocketIO instance
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    db.init_app(app)  # Initialize SQLAlchemy with app
     
     app.logger.setLevel(logging.DEBUG)
 

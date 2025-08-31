@@ -1,8 +1,8 @@
-# my_flask_app/app/sockets.py
-
 from flask_socketio import SocketIO, emit
 from flask import request
-from .db import get_db_connection  # Assuming you have a db module for DB connections
+from .db import db
+from .models import User, Report
+
 connected_users = {}  # {chat_id: socket.sid}
 
 def get_user_flags_by_chat_id(chat_id):
@@ -10,15 +10,10 @@ def get_user_flags_by_chat_id(chat_id):
     Looks up whether the user is banned or muted by their chat_id.
     Returns dict like {"is_banned": 0, "is_muted": 1}
     """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT is_banned, is_muted FROM users WHERE chat_id = ?", (chat_id,))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        return {"is_banned": row["is_banned"], "is_muted": row["is_muted"]}
+    user = User.query.filter_by(chat_id=chat_id).first()
+    if user:
+        return {"is_banned": user.is_banned, "is_muted": user.is_muted}
     return None
-
 
 def register_socket_handlers(socketio):
     @socketio.on("connect")
@@ -62,7 +57,7 @@ def register_socket_handlers(socketio):
             emit("error", {"error": "Sender not identified"})
             return
 
-        # 🔹 Check if sender is muted
+        # Check if sender is muted
         flags = get_user_flags_by_chat_id(sender_id)
         if flags and flags["is_muted"]:
             print(f"[!] Muted user {sender_id} tried to send message.")
@@ -77,7 +72,7 @@ def register_socket_handlers(socketio):
             }, to=recipient_sid)
         else:
             print(f"[!] Recipient not online: {recipient_id}")
-        
+
     @socketio.on("message_request")
     def handle_message_request(data):
         target_chat_id = data.get("target")
@@ -111,7 +106,7 @@ def register_socket_handlers(socketio):
             "status": "accepted" if accepted else "rejected",
             "by": responder_id
         }, to=requester_sid)
-    
+
     @socketio.on("chat_ended_notice")
     def handle_chat_end(data):
         partner_id = data.get("recipient")  # who to notify
@@ -122,7 +117,7 @@ def register_socket_handlers(socketio):
         sender_id = next((cid for cid, sid in connected_users.items() if sid == sender_sid), None)
 
         if partner_sid and sender_id:
-            print(f"📴 {sender_id} ended chat with {partner_id}")
+            print(f"{sender_id} ended chat with {partner_id}")
             emit("chat_ended_notice", {"from": sender_id}, to=partner_sid)
 
     @socketio.on("report_user")
@@ -132,15 +127,17 @@ def register_socket_handlers(socketio):
         reason = data.get("reason")
         chat_log = data.get("chat_log", "")  # Optional
 
-        # Save to DB
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO reports (reporter_id, reported_id, reason, chat_log) VALUES (?, ?, ?, ?)",
-            (reporter_id, reported_id, reason, chat_log)
-        )
-        conn.commit()
-        conn.close()
-
-        # Optionally, notify all admins (or just log for now)
-        # emit("report_received", {...}, broadcast=True)
+        try:
+            new_report = Report(
+                reporter_id=reporter_id,
+                reported_id=reported_id,
+                reason=reason,
+                chat_log=chat_log
+            )
+            db.session.add(new_report)
+            db.session.commit()
+            # Optionally notify admins or emit event here
+        except Exception as e:
+            db.session.rollback()
+            print(f"[Error] Could not save report: {e}")
+            emit("error", {"error": "Failed to submit report."}, to=request.sid)
