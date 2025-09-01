@@ -57,3 +57,5 @@ Flask==3.0.3
 SQLAlchemy==2.0.34
 python-dotenv==0.21.0
 Werkzeug==3.0.3
+gunicorn==20.1.0
+eventlet==0.40.2
