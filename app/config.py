@@ -13,6 +13,10 @@ class Config:
     CORS_HEADERS = "Content-Type"
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///users.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,   # Checks connection before using it
+        "pool_recycle": 299,     # Recycle connections at just under 5 minutes
+    }
 
 class ProductionConfig(Config):
     SECRET_KEY = os.environ["SECRET_KEY"]  # No fallback, must be set
