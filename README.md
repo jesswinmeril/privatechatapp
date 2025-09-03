@@ -29,7 +29,8 @@ A real-time private chat web application built with Flask, Flask-SocketIO, JWT a
 
 - Python 3.8+
 - Virtual environment (recommended)
-- SQLite3
+- SQLite3 (for dev and testing)
+- SQLAlchemy
 
 ### Installation
 
