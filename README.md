@@ -20,8 +20,8 @@ A real-time private chat web application built with Flask, Flask-SocketIO, JWT a
 
 - Backend: Python, Flask, Flask-SocketIO, Flask-JWT-Extended
 - Frontend: JavaScript, Bootstrap 5, Socket.IO client
-- Database: SQLite (for demo and development)
-- Deployment: Easily deployable on AWS Elastic Beanstalk or similar
+- Database: SQLite (for demo and development), SQLAlchemy
+- Deployment: Easily deployable
 
 ## Getting Started
 
@@ -34,21 +34,30 @@ A real-time private chat web application built with Flask, Flask-SocketIO, JWT a
 ### Installation
 
 1. Clone the repository:
+git clone https://github.com/yourusername/privatechatapp.git   
 2. Create and activate a virtual environment:
+cd privatechatapp
+python -m venv venv
+source venv/bin/activate      # or venv\Scripts\activate on Windows
 3. Install dependencies:
+pip install -r requirements.txt
 4. Set environment variables in a `.env` file (do NOT commit `.env`):
+cp .env.example .env          # create .env file and fill in variables
 5. Run the application (development mode):
+python run.py
 6. Access the app at `http://localhost:8000`
+7. (Optional) I have included admin and masteradmin features, they're not really necessary but you can use them if you want to, just run the create_master_admin.py script once in your virtual environment after you've started the app, then promote the users you want to admin.
 
 ## Usage
 
 - Register a new user or login.
+- If you have another user's chat ID and they're online, you can request chat with them.
 - Use the chat interface to send private messages.
 - Admin users can access the admin panel for moderation.
 
 ## Deployment
 
-This app can be deployed using AWS Elastic Beanstalk or other Python hosting services.
+This app can be deployed using Render, Heroku, Fly.io, AWS or other Python hosting services(I used Render, https://render.com , it's really beginner friendly and free).
 
 ## Project Structure
 
@@ -59,6 +68,7 @@ root/ 
 │   ├── db.py
 │   ├── error_handlers.py
 │   ├── jwt_handlers.py
+│   ├── models.py
 │   ├── routes.py
 │   ├── sockets.py
 │   ├── static/
@@ -66,12 +76,11 @@ root/ 
 │   │   └── styles.css
 │   └── templates/
 │       └── login.html
-├── create_master_admin_columns.py
-├── migrate_reports_table.py
-├── .env 
+├── create_master_admin.py
+├── .env (app secrets, DO NOT COMMIT TO GIT)
 ├── .gitignore
 ├── requirements.txt
-├── run.py
+├── run.py(for dev purposes only)
 └── wsgi.py
 
 
