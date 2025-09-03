@@ -17,6 +17,7 @@ __pycache__/
 
 create_master_admin_column.py
 migrate_add_reports_table.py
+create_master_admin.py
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
