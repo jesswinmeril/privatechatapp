@@ -6,8 +6,8 @@ from werkzeug.security import generate_password_hash
 
 # Customize these values:
 USERNAME = "masteradmin"
-PASSWORD = "YourStrongPassword"   # Choose a secure password!
-CHAT_ID = "masteradminid"         # Choose something unique
+PASSWORD = "ChangeThisPassword!"   # Choose a secure password!
+CHAT_ID = "00000000"         # Choose something unique
 
 app = create_app()
 with app.app_context():

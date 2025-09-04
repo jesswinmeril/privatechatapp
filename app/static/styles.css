@@ -7,10 +7,24 @@
   padding: 0;
 }
 
+:root {
+  --color-bg: #f7e8d3;
+  --color-primary: #4DA8DA;
+  --color-accent: #F1B24A;
+  --color-success: #9DC88D;
+  --color-dark: #164A41;
+  --color-card: #ffffff;
+  --color-danger: #ed3d21;
+}
+
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #dbd5d5;
-  color: #1f2937;
+  background: var(--color-bg);
+  color: var(--color-dark);
+  font-family: 'Inter', 'Poppins', Arial, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, .navBar, button {
+  font-family: 'Poppins', 'Inter', Arial, sans-serif;
 }
 
 /* Container */
@@ -18,7 +32,7 @@ body {
   max-width: 420px;
   width: 90%;
   margin: 40px auto;
-  background: #999797;
+  background: var(--color-card);
   padding: 28px 24px;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
@@ -45,7 +59,7 @@ input[type="password"] {
 }
 
 input:focus {
-  border-color: #555559;
+  border-color: var(--color-primary);
   outline: none;
 }
 
@@ -54,8 +68,8 @@ button {
   padding: 10px 14px;
   border: none;
   border-radius: 6px;
-  background-color: #1f2937;
-  color: white;
+  background-color: var(--color-primary); 
+  color: #fff;
   font-size: 1em;
   font-weight: 500;
   cursor: pointer;
@@ -64,7 +78,8 @@ button {
 }
 
 button:hover {
-  background-color: #374151;
+  background-color: var(--color-success); 
+  color: var(--color-dark);
 }
 
 button:disabled {
@@ -75,18 +90,19 @@ button:disabled {
 
 /* Top Navigation Bar */
 #navBar {
-  background: #1f2937;
+  background: var(--color-primary);
   padding: 14px 0;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 18px;
-  border-bottom: 2px solid #e5e7eb;
+  color: #fff;
+  border-bottom: 2px solid var(--color-accent);
 }
 
 #navBar button {
-  background-color: #ffffff;
-  color: #1f2937;
+  background-color: var(--color-card); 
+  color: var(--color-dark);
   padding: 8px 14px;
   border-radius: 6px;
   font-weight: 500;
@@ -95,7 +111,8 @@ button:disabled {
 }
 
 #navBar button:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-accent); 
+  color: var(--color-dark);
 }
 
 /* SPA Section Styles */
@@ -105,7 +122,7 @@ button:disabled {
 
 /* User ID Display */
 .user-id-box {
-  background: #f3f4f6;
+  background: var(--color-accent);
   padding: 14px 12px;
   border-radius: 8px;
   display: flex;
@@ -115,8 +132,8 @@ button:disabled {
 }
 
 #copyIdBtn {
-  background: #374151;
-  color: #fff;
+  background: var(--color-success);
+  color: var(--color-dark);
   padding: 3px 9px;
   border-radius: 4px;
   margin-left: 4px;
@@ -124,13 +141,13 @@ button:disabled {
 }
 
 #copyIdBtn:hover {
-  background: #111827;
+  background: var(--color-accent);
 }
 
 /* Chat UI + Admin Cards */
 .chat-card,
 .admin-card {
-  background: #f8fafc;
+  background: var(--color-bg);
   border-radius: 8px;
   padding: 14px 12px;
   margin-bottom: 12px;
@@ -142,7 +159,7 @@ button:disabled {
 
 /* Chat Window */
 #chatWindow {
-  background: #f1f5f9;
+  background: #fffbe7;
   border-radius: 8px;
   min-height: 200px;
   margin-top: 16px;
@@ -176,9 +193,8 @@ button:disabled {
 
 #chatSendBtn,
 #endChatBtn,
-#reportChatBtn,
 #adminJoinBtn {
-  background: #555559;
+  background: var(--color-primary);
   color: #fff;
   padding: 7px 14px;
   border-radius: 5px;
@@ -186,9 +202,19 @@ button:disabled {
 
 #chatSendBtn:hover,
 #endChatBtn:hover,
-#adminJoinBtn:hover,
+#adminJoinBtn:hover {
+  background: var(--color-success);
+  color: var(--color-dark);
+}
+
+#reportChatBtn {
+  background-color: var(--color-accent);
+  color: var(--color-dark);
+}
+
 #reportChatBtn:hover {
-  background: #8e8e9c;
+  background-color: var(--color-primary);
+  color: #fff;
 }
 
 /* AutoModerator Box */
@@ -205,7 +231,7 @@ button:disabled {
 /* Report Area */
 .report-list {
   font-size: 0.97em;
-  background: #fef9c3;
+  background: var(--color-accent);
   padding: 10px 8px;
   border-radius: 6px;
 }
@@ -238,8 +264,8 @@ th {
 }
 
 .toast {
-  background-color: #555559;
-  color: white;
+  background-color: var(--color-dark);
+  color: #fff;
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 10px;
@@ -251,11 +277,12 @@ th {
 }
 
 .toast.success {
-  background-color: #16a34a;
+  background-color: var(--color-success);
+  color: var(--color-dark);
 }
 
 .toast.error {
-  background-color: #ed3d21;
+  background-color: var(--color-danger);
 }
 
 @keyframes fadeIn {
@@ -317,8 +344,8 @@ th {
 }
 
 .promoteBtn {
-  background-color: #83f03a;
-  color: #000;
+  background-color: var(--color-success); 
+  color: var(--color-dark);
   padding: 6px 12px;
   border: none;
   border-radius: 5px;
@@ -333,7 +360,7 @@ th {
 }
 
 .promoteBtn.demote {
-  background-color: #ed3d21;
+  background-color: var(--color-danger);
   color: #fff;
 }
 
@@ -342,7 +369,7 @@ th {
 }
 
 .deleteUserBtn {
-  background-color: #ed3d21;
+  background-color: var(--color-danger);
   color: #fff;
   padding: 6px 12px;
   border: none;
@@ -357,12 +384,12 @@ th {
 }
 
 #reportChatBtn {
-  background-color: #facc15; 
-  color: #000;
+  background-color: var(--color-accent);
+  color: var(--color-dark);
 }
-
 #reportChatBtn:hover {
-  background-color: #eab308;
+  background-color: var(--color-primary);
+  color: #fff;
 }
 
 /* Report List Item */
@@ -379,4 +406,23 @@ th {
 
 .report-list td {
   white-space: pre-wrap; /* Preserve chat logs formatting */
+}
+
+.message-bubble.sent {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+  margin-left: auto;
+  margin-bottom: 2px;
+  padding: 8px 14px;
+  max-width: 80%;
+}
+.message-bubble.received {
+  background-color: var(--color-success);
+  color: var(--color-dark);
+  border-radius: 16px 16px 16px 4px;
+  margin-right: auto;
+  margin-bottom: 2px;
+  padding: 8px 14px;
+  max-width: 80%;
 }
