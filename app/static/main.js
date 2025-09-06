@@ -104,25 +104,89 @@ function resetChatUI() {
 }
 
 async function loadUsersList() {
-  const listElem = document.getElementById("allUsersList");
-  if (!listElem) return;
-  listElem.textContent = "Loading...";
+  const allUsersList = document.getElementById("allUsersList");
+  if (!allUsersList) return;
+  allUsersList.innerHTML = "Loading...";
+
   try {
-    const resp = await apiFetchWithRefresh("/all_users");
-    if (!resp.users || resp.users.length === 0) {
-      listElem.textContent = "No users found.";
-      return;
+    const data = await apiFetchWithRefresh("/all_users");
+    if (data.users && data.users.length > 0) {
+      const isMasterAdmin = !!currentUser?.is_master_admin;
+      const myUsername = currentUser?.username || "";
+
+      let html = "<table><tr><th>Username</th><th>Role</th><th>Action</th><th>Change Role</th></tr>";
+      data.users.forEach(user => {
+        const isAdmin = user.role === "admin";
+        const disableDelete = user.is_master_admin ? "disabled style='opacity:0.5; cursor:not-allowed;'" : "";
+        const canPromoteDemote = isMasterAdmin && !user.is_master_admin && user.username.trim() !== myUsername.trim();
+        html += `
+          <tr>
+            <td>${user.username}</td>
+            <td>${user.role}</td>
+            <td>
+              <button class="deleteUserBtn" data-username="${user.username}" ${disableDelete}>Delete</button>
+            </td>
+            <td>
+              ${canPromoteDemote ? 
+                `<button class="promoteBtn ${isAdmin ? 'demote' : 'promote'}" data-username="${user.username}">
+                  ${isAdmin ? "Demote" : "Promote"}
+                </button>`
+              : "Not allowed"}
+            </td>
+          </tr>`;
+      });
+      html += "</table>";
+      allUsersList.innerHTML = html;
+
+      // Delete button handler
+      document.querySelectorAll(".deleteUserBtn").forEach(btn => {
+        if (!btn.disabled) {
+          btn.addEventListener("click", function () {
+            const username = this.dataset.username;
+            if (confirm(`Delete user '${username}'?`)) {
+              apiFetchWithRefresh("/delete_user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username }),
+              })
+                .then(() => {
+                  showToast("User deleted.", "success");
+                  loadUsersList(); // Refresh table
+                })
+                .catch(() => showToast("Failed to delete user.", "error"));
+            }
+          });
+        }
+      });
+
+      // Promote/Demote handler
+      document.querySelectorAll(".promoteBtn").forEach(btn => {
+        btn.addEventListener("click", function () {
+          const username = this.dataset.username;
+          const newRole = this.textContent.trim().toLowerCase() === "promote" ? "admin" : "user";
+          if (confirm(`Are you sure you want to change ${username}'s role to ${newRole}?`)) {
+            apiFetchWithRefresh("/change_role", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username, role: newRole }),
+            })
+              .then(res => {
+                if (res.message) {
+                  showToast(res.message, "success");
+                  loadUsersList();
+                } else {
+                  showToast(res.error || "Failed to change role", "error");
+                }
+              });
+          }
+        });
+      });
+
+    } else {
+      allUsersList.textContent = "No users found.";
     }
-    // Build HTML table, add event listeners for action buttons
-    let html = "<table><thead><tr><th>Username</th><th>Role</th><th>Actions</th></tr></thead><tbody>";
-    for (const user of resp.users) {
-      html += `<tr><td>${user.username}</td><td>${user.role}</td><td>Actions here</td></tr>`;
-    }
-    html += "</tbody></table>";
-    listElem.innerHTML = html;
-    // TODO: Add listeners for delete/promote buttons here
   } catch {
-    listElem.textContent = "Failed to load users.";
+    allUsersList.textContent = "Failed to fetch users.";
   }
 }
 
