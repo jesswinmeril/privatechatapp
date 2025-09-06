@@ -124,7 +124,7 @@ async function loadUsersList() {
       const username = user.username?.trim() || "";
       const isAdmin = user.role === "admin";
       const canDelete = !user.is_master_admin && username !== myUsername;
-      const canPromoteDemote = isMasterAdmin && !user.is_master_admin && username !== myUsername;
+      const canPromoteDemote = window.isMasterAdmin && !user.is_master_admin && user.username.trim() !== (document.getElementById("dashboardUsername").textContent.trim());
 
       const deleteBtnHtml = canDelete
         ? `<button class="deleteUserBtn" data-username="${username}">Delete</button>`
