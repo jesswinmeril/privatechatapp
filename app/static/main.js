@@ -104,91 +104,103 @@ function resetChatUI() {
 }
 
 async function loadUsersList() {
-  const allUsersList = document.getElementById("allUsersList");
-  if (!allUsersList) return;
-  allUsersList.innerHTML = "Loading...";
+  const listElem = document.getElementById("allUsersList");
+  if (!listElem) return;
+  listElem.textContent = "Loading...";
 
   try {
-    const data = await apiFetchWithRefresh("/all_users");
-    if (data.users && data.users.length > 0) {
-      const isMasterAdmin = !!currentUser?.is_master_admin;
-      const myUsername = currentUser?.username || "";
+    const resp = await apiFetchWithRefresh("/all_users");
+    if (!resp.users || resp.users.length === 0) {
+      listElem.textContent = "No users found.";
+      return;
+    }
 
-      let html = "<table><tr><th>Username</th><th>Role</th><th>Action</th><th>Change Role</th></tr>";
-      data.users.forEach(user => {
-        const isAdmin = user.role === "admin";
-        const disableDelete = user.is_master_admin ? "disabled style='opacity:0.5; cursor:not-allowed;'" : "";
-        const canPromoteDemote = isMasterAdmin && !user.is_master_admin && user.username.trim() !== myUsername.trim();
-        html += `
-          <tr>
-            <td>${user.username}</td>
-            <td>${user.role}</td>
-            <td>
-              <button class="deleteUserBtn" data-username="${user.username}" ${disableDelete}>Delete</button>
-            </td>
-            <td>
-              ${canPromoteDemote ? 
-                `<button class="promoteBtn ${isAdmin ? 'demote' : 'promote'}" data-username="${user.username}">
-                  ${isAdmin ? "Demote" : "Promote"}
-                </button>`
-              : "Not allowed"}
-            </td>
-          </tr>`;
-      });
-      html += "</table>";
-      allUsersList.innerHTML = html;
+    const isMasterAdmin = currentUser?.is_master_admin;
+    const myUsername = currentUser?.username?.trim() || "";
 
-      // Delete button handler
-      document.querySelectorAll(".deleteUserBtn").forEach(btn => {
-        if (!btn.disabled) {
-          btn.addEventListener("click", function () {
-            const username = this.dataset.username;
-            if (confirm(`Delete user '${username}'?`)) {
-              apiFetchWithRefresh("/delete_user", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username }),
-              })
-                .then(() => {
-                  showToast("User deleted.", "success");
-                  loadUsersList(); // Refresh table
-                })
-                .catch(() => showToast("Failed to delete user.", "error"));
-            }
-          });
-        }
-      });
+    let html = "<table><thead><tr><th>Username</th><th>Role</th><th>Action</th><th>Change Role</th></tr></thead><tbody>";
 
-      // Promote/Demote handler
-      document.querySelectorAll(".promoteBtn").forEach(btn => {
+    resp.users.forEach(user => {
+      const username = user.username?.trim() || "";
+      const isAdmin = user.role === "admin";
+      const canDelete = !user.is_master_admin && username !== myUsername;
+      const canPromoteDemote = isMasterAdmin && !user.is_master_admin && username !== myUsername;
+
+      const deleteBtnHtml = canDelete
+        ? `<button class="deleteUserBtn" data-username="${username}">Delete</button>`
+        : `<button disabled style="opacity:0.5; cursor:not-allowed;">Delete</button>`;
+
+      const promoteBtnHtml = canPromoteDemote
+        ? `<button class="promoteBtn ${isAdmin ? 'demote' : 'promote'}" data-username="${username}">
+             ${isAdmin ? "Demote" : "Promote"}
+           </button>`
+        : "Not allowed";
+
+      html += `
+        <tr>
+          <td>${username}</td>
+          <td>${user.role}</td>
+          <td>${deleteBtnHtml}</td>
+          <td>${promoteBtnHtml}</td>
+        </tr>`;
+    });
+
+    html += "</tbody></table>";
+    listElem.innerHTML = html;
+
+    // Attach event listener to Delete buttons
+    document.querySelectorAll(".deleteUserBtn").forEach(btn => {
+      if (!btn.disabled) {
         btn.addEventListener("click", function () {
           const username = this.dataset.username;
-          const newRole = this.textContent.trim().toLowerCase() === "promote" ? "admin" : "user";
-          if (confirm(`Are you sure you want to change ${username}'s role to ${newRole}?`)) {
-            apiFetchWithRefresh("/change_role", {
+          if (confirm(`Delete user '${username}'?`)) {
+            apiFetchWithRefresh("/delete_user", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username, role: newRole }),
+              body: JSON.stringify({ username }),
             })
-              .then(res => {
-                if (res.message) {
-                  showToast(res.message, "success");
-                  loadUsersList();
-                } else {
-                  showToast(res.error || "Failed to change role", "error");
-                }
+              .then(() => {
+                showToast("User deleted.", "success");
+                loadUsersList();
+              })
+              .catch(() => {
+                showToast("Failed to delete user.", "error");
               });
           }
         });
-      });
+      }
+    });
 
-    } else {
-      allUsersList.textContent = "No users found.";
-    }
-  } catch {
-    allUsersList.textContent = "Failed to fetch users.";
+    // Attach event listener to Promote/Demote buttons
+    document.querySelectorAll(".promoteBtn").forEach(btn => {
+      btn.addEventListener("click", function () {
+        const username = this.dataset.username;
+        const newRole = this.textContent.trim().toLowerCase() === "promote" ? "admin" : "user";
+        if (confirm(`Are you sure you want to change ${username}'s role to ${newRole}?`)) {
+          apiFetchWithRefresh("/change_role", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, role: newRole }),
+          })
+            .then(res => {
+              if (res.message) {
+                showToast(res.message, "success");
+                loadUsersList();
+              } else {
+                showToast(res.error || "Failed to change role", "error");
+              }
+            })
+            .catch(() => showToast("Request failed", "error"));
+        }
+      });
+    });
+
+  } catch (err) {
+    listElem.textContent = "Failed to load users.";
+    console.error("Error loading users list:", err);
   }
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeApp();
