@@ -99,12 +99,12 @@ function resetChatUI() {
   document.getElementById("chatWithBox").style.display = "none";
   const reportBtn = document.getElementById("reportChatBtn");
   if (reportBtn) reportBtn.style.display = "none";
-  document.getElementById("targetChatId").value = "";
+  document.getElementById("targetUserId").value = "";
   clearChat();
 }
 
 async function loadUsersList() {
-  const listElem = document.getElementById("usersList");
+  const listElem = document.getElementById("allUsersList");
   if (!listElem) return;
   listElem.textContent = "Loading...";
   try {
@@ -149,21 +149,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.getElementById("navDashboard").addEventListener("click", () => showSection("dashboard"));
-  document.getElementById("navChat").addEventListener("click", () => showSection("chat"));
+  document.getElementById("navDashboard").addEventListener("click", () => showSection("dashboardSection"));
+  document.getElementById("navChat").addEventListener("click", () => showSection("chatSection"));
   document.getElementById("navUsers").addEventListener("click", () => {
-    showSection("users");
+    showSection("usersSection");
     loadUsersList();
   });
-  document.getElementById("navAdmin").addEventListener("click", () => showSection("admin"));
-  document.getElementById("navAccount").addEventListener("click", () => showSection("account"));
+  document.getElementById("navAdmin").addEventListener("click", () => showSection("adminSection"));
+  document.getElementById("navAccount").addEventListener("click", () => showSection("accountSection"));
 
   document.getElementById("startChatBtn").addEventListener("click", () => {
-    const targetId = document.getElementById("targetChatId").value.trim();
+    const targetId = document.getElementById("targetUserId").value.trim();
     if (!targetId) return showToast("Enter a chat ID", "error");
     if (targetId === currentUser?.chat_id) return showToast("Can't chat with yourself", "error");
     if (!socket) return showToast("Not connected", "error");
-    socket.emit("request_sent", { target: targetId });
+    socket.emit("message_request", { target: targetId });
     showToast(`Request sent to ${targetId}`, "info");
   });
 
