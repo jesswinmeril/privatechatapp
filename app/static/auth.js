@@ -43,6 +43,7 @@ export function handleLogin(event) {
     })
     .then(({ users }) => {
       currentUser = users?.[0] || null;
+      window.currentUser = currentUser; 
       if (!currentUser) throw new Error("User information missing");
 
       showToast("Login successful!", "success");
