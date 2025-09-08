@@ -17,6 +17,7 @@ async function initializeApp() {
       const userResp = await apiFetchWithRefresh("/users");
       if (userResp && userResp.users && userResp.users.length > 0) {
         currentUser = userResp.users[0];
+        window.currentUser = currentUser;
         setLoginState(true, currentUser);
         setupSocket();
       } else {
