@@ -117,6 +117,7 @@ async function loadUsersList() {
 
     const isMasterAdmin = currentUser?.is_master_admin;
     const myUsername = currentUser?.username?.trim().toLowerCase() || "";
+    console.log({ currentUser, isMasterAdmin, myUsername });
 
     let html = "<table><thead><tr><th>Username</th><th>Role</th><th>Action</th><th>Change Role</th></tr></thead><tbody>";
 
