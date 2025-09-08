@@ -261,10 +261,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("chatInput");
     const currentChatId = getCurrentChatId();
     const socket = getSocket();
-
+    
     if (!input) return;
     const msg = input.value.trim();
     if (!msg || !currentChatId || !socket) return;
+    
     sendMessage(currentChatId, msg);
     import("./ui.js").then(({ appendMessage }) => appendMessage("You", msg));
     input.value = "";
@@ -274,11 +275,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentChatId = getCurrentChatId();
     const currentUser = getCurrentUser();
     const socket = getSocket();
-
+    
     if (!currentChatId || !socket) return;
+    
     sendMessage(currentChatId, `[System] ${currentUser?.username} left chat`);
     endChat(currentChatId);
-    setCurrentChatId(null);
+    setCurrentChatId(null);  // update centralized state
     resetChatUI();
     showToast("Chat ended", "info");
   });
