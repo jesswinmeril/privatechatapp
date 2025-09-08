@@ -1,7 +1,6 @@
 // my_flask_app/app/static/api.js
 
 const BASE_URL = window.location.origin;
-
 /**
  * Makes a fetch call with automatic access token refresh.
  * @param {string} url - The endpoint URL (absolute or relative).

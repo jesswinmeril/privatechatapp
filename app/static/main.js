@@ -1,25 +1,24 @@
-// main.js
+// my_flask_app/app/static/main.js
 
 import { showToast, setLoginState, showSection, clearChat, toggleRegistrationSection } from "./ui.js";
 import { apiFetchWithRefresh } from "./api.js";
 import { handleLogin, handleRegister, handleLogout } from "./auth.js";
 import { initSocket, sendMessage, endChat, disconnectSocket } from "./socket.js";
-
-let socket = null;
-let currentUser = null;
-let currentChatId = null;
+import { 
+  setCurrentUser, getCurrentUser, 
+  setSocket, getSocket, 
+  setCurrentChatId, getCurrentChatId 
+} from './state.js';
 
 async function initializeApp() {
   const token = localStorage.getItem("access_token");
-
   if (token) {
     try {
       const userResp = await apiFetchWithRefresh("/users");
       if (userResp && userResp.users && userResp.users.length > 0) {
-        currentUser = userResp.users[0];
-        window.currentUser = currentUser;
-        setLoginState(true, currentUser);
-        setupSocket();
+        setCurrentUser(userResp.users[0]);
+        setLoginState(true, getCurrentUser());
+        await setupSocket();
       } else {
         resetToLogin();
       }
@@ -33,25 +32,31 @@ async function initializeApp() {
 
 function resetToLogin() {
   localStorage.clear();
+  setCurrentUser(null);
+  setSocket(null);
+  setCurrentChatId(null);
   setLoginState(false);
   showSection("loginForm");
 }
 
-function setupSocket() {
+async function setupSocket() {
+  const currentUser = getCurrentUser();
   if (!currentUser) return;
 
-  socket = initSocket(window.location.origin, currentUser, {
+  const socketInstance = initSocket(window.location.origin, currentUser, {
     private_message: ({ sender, message }) => {
       import("./ui.js").then(({ appendMessage }) => appendMessage(sender, message));
     },
     request_received: ({ from }) => {
+      const socket = getSocket();
       if (confirm(`User ${from} wants to chat. Accept?`)) {
         socket.emit("request_response", { accepted: true, to: from });
-        currentChatId = from;
+        setCurrentChatId(from);
         import("./ui.js").then(({ showSection, clearChat }) => {
-          showSection("chat");
+          showSection("chatSection");
           clearChat();
-          document.getElementById("currentChatUser").textContent = from;
+          const chatUserElem = document.getElementById("currentChatUser");
+          if (chatUserElem) chatUserElem.textContent = from;
           document.getElementById("chatWindow").style.display = "block";
           document.getElementById("chatWithBox").style.display = "block";
           const reportBtn = document.getElementById("reportChatBtn");
@@ -69,15 +74,15 @@ function setupSocket() {
         appendMessage("system", `User ${from} has left the chat`);
         showToast(`Chat ended by ${from}`, "info");
       });
-      currentChatId = null;
+      setCurrentChatId(null);
       resetChatUI();
     },
     request_result: ({ status, by }) => {
       import("./ui.js").then(({ showToast, showSection, clearChat }) => {
         if (status === "accepted") {
-          currentChatId = by;
+          setCurrentChatId(by);
           document.getElementById("currentChatUser").textContent = by;
-          showSection("chat");
+          showSection("chatSection");
           clearChat();
           document.getElementById("chatWindow").style.display = "block";
           document.getElementById("chatWithBox").style.display = "block";
@@ -87,11 +92,13 @@ function setupSocket() {
         } else if (status === "rejected") {
           showToast(`User ${by} rejected your chat request.`, "error");
         } else if (status === "offline") {
-          showToast("User is offline. Try again later", "error");
+          showToast("User is offline. Try again later.", "error");
         }
       });
     }
   });
+
+  setSocket(socketInstance);
 }
 
 function resetChatUI() {
@@ -116,6 +123,7 @@ async function loadUsersList() {
       return;
     }
 
+    const currentUser = getCurrentUser();
     const isMasterAdmin = currentUser?.is_master_admin;
     const myUsername = currentUser?.username?.trim().toLowerCase() || "";
     console.log({ currentUser, isMasterAdmin, myUsername });
@@ -203,28 +211,28 @@ async function loadUsersList() {
   }
 }
 
-
+// Event listeners and initializers
 document.addEventListener("DOMContentLoaded", () => {
   initializeApp();
 
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     await handleLogin(e);
-    currentUser = window.currentUser || null;
-    if (currentUser) setupSocket();
+    if (getCurrentUser()) await setupSocket();
   });
 
   document.getElementById("registerForm").addEventListener("submit", handleRegister);
 
   document.getElementById("logoutButton").addEventListener("click", () => {
     handleLogout();
+    const socket = getSocket();
     if (socket) {
       disconnectSocket();
-      socket = null;
-      currentUser = null;
-      currentChatId = null;
-      resetChatUI();
-      showSection("loginForm");
+      setSocket(null);
     }
+    setCurrentUser(null);
+    setCurrentChatId(null);
+    resetChatUI();
+    showSection("loginForm");
   });
 
   document.getElementById("navDashboard").addEventListener("click", () => showSection("dashboardSection"));
@@ -238,15 +246,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("startChatBtn").addEventListener("click", () => {
     const targetId = document.getElementById("targetUserId").value.trim();
+    const currentUser = getCurrentUser();
+    const socket = getSocket();
+
     if (!targetId) return showToast("Enter a chat ID", "error");
     if (targetId === currentUser?.chat_id) return showToast("Can't chat with yourself", "error");
     if (!socket) return showToast("Not connected", "error");
+
     socket.emit("message_request", { target: targetId });
     showToast(`Request sent to ${targetId}`, "info");
   });
 
   document.getElementById("chatSendBtn").addEventListener("click", () => {
     const input = document.getElementById("chatInput");
+    const currentChatId = getCurrentChatId();
+    const socket = getSocket();
+
     if (!input) return;
     const msg = input.value.trim();
     if (!msg || !currentChatId || !socket) return;
@@ -256,15 +271,18 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("endChatBtn").addEventListener("click", () => {
+    const currentChatId = getCurrentChatId();
+    const currentUser = getCurrentUser();
+    const socket = getSocket();
+
     if (!currentChatId || !socket) return;
     sendMessage(currentChatId, `[System] ${currentUser?.username} left chat`);
     endChat(currentChatId);
-    currentChatId = null;
+    setCurrentChatId(null);
     resetChatUI();
     showToast("Chat ended", "info");
   });
 
-  // Toggle Registration display
   const toggleRegBtn = document.getElementById("toggleRegister");
   if (toggleRegBtn) {
     toggleRegBtn.addEventListener("click", () => {

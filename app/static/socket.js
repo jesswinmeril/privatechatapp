@@ -1,6 +1,6 @@
 // my_flask_app/app/static/socket.js
 
-let socket = null;
+import { getSocket, setSocket } from './state.js';
 
 /**
  * Initialize Socket.IO connection with event handlers.
@@ -12,6 +12,7 @@ let socket = null;
  * @returns {object} - The socket instance.
  */
 export function initSocket(baseURL, user, eventHandlers = {}) {
+  let socket = getSocket();
   if (socket) {
     socket.disconnect();
   }
@@ -40,6 +41,7 @@ export function initSocket(baseURL, user, eventHandlers = {}) {
     console.info("Socket disconnected:", reason);
   });
 
+  setSocket(socket);
   return socket;
 }
 
@@ -50,6 +52,7 @@ export function initSocket(baseURL, user, eventHandlers = {}) {
  * @param {string} message - Message text to send.
  */
 export function sendMessage(recipientChatId, message) {
+  const socket = getSocket();
   if (!socket || !recipientChatId || !message) return;
   socket.emit("private_message", {
     recipient: recipientChatId,
@@ -63,6 +66,7 @@ export function sendMessage(recipientChatId, message) {
  * @param {string} recipientChatId 
  */
 export function endChat(recipientChatId) {
+  const socket = getSocket();
   if (!socket || !recipientChatId) return;
   socket.emit("chat_end_notice", { recipient: recipientChatId });
 }
@@ -74,6 +78,7 @@ export function endChat(recipientChatId) {
  * @param {function} handler - Event handler callback.
  */
 export function onEvent(event, handler) {
+  const socket = getSocket();
   if (!socket) return;
   socket.on(event, handler);
 }
@@ -82,10 +87,9 @@ export function onEvent(event, handler) {
  * Disconnect the socket.
  */
 export function disconnectSocket() {
+  const socket = getSocket();
   if (socket) {
     socket.disconnect();
-    socket = null;
+    setSocket(null);
   }
 }
-
-export { socket };

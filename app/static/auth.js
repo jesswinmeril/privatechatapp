@@ -3,10 +3,7 @@
 import { apiFetchWithRefresh } from "./api.js";
 import { showToast, setLoginState, clearChat, showSection } from "./ui.js";
 import { initSocket } from "./socket.js";
-
-let socket = null;
-let currentUser = null;
-let currentChatPartnerId = null;
+import { setCurrentUser, getCurrentUser, setSocket, getSocket, setCurrentChatPartnerId, getCurrentChatPartnerId } from './state.js';
 
 /**
  * Handles login form submission
@@ -42,41 +39,40 @@ export function handleLogin(event) {
       }
     })
     .then(({ users }) => {
-      currentUser = users?.[0] || null;
-      window.currentUser = currentUser; 
-      if (!currentUser) throw new Error("User information missing");
+      const user = users?.[0] ?? null;
+      if (!user) throw new Error("User information missing");
 
+      setCurrentUser(user);
       showToast("Login successful!", "success");
-      setLoginState(true, currentUser);
+      setLoginState(true, user);
 
       // Init socket connection & events
-      socket = initSocket(window.location.origin, currentUser, {
+      const socketInstance = initSocket(window.location.origin, user, {
         "private_message": handlePrivateMessage,
         "request_received": handleRequestReceived,
         "disconnect": handleDisconnect,
         "chat_ended_notice": handleChatEnded,
         "request_result": handleRequestResult,
       });
+      setSocket(socketInstance);
     })
     .catch((error) => {
       showToast(error.message || "Login error", "error");
+      setCurrentUser(null);
       setLoginState(false);
-      currentUser = null;
     });
 }
 
-// Placeholder: define socket event handlers here or export those too
 function handlePrivateMessage({ sender, message }) {
-  // Use ui.js appendMessage or other UI updates
-  // For example:
   import("./ui.js").then(({ appendMessage }) => appendMessage(sender, message));
 }
 
 function handleRequestReceived({ from }) {
+  const socket = getSocket();
   if (confirm(`User ${from} wants to chat. Accept?`)) {
     socket.emit("request_response", { accepted: true, to: from });
-    currentChatPartnerId = from;
-    // Show chat UI, clear previous chat
+    setCurrentChatPartnerId(from);
+
     import("./ui.js").then(({ showSection, clearChat }) => {
       showSection("chatSection");
       clearChat();
@@ -94,36 +90,36 @@ function handleRequestReceived({ from }) {
 }
 
 function handleDisconnect() {
-  import("./ui.js").then(({ showToast }) =>
-    showToast("Disconnected from chat server.", "error")
-  );
+  import("./ui.js").then(({ showToast }) => showToast("Disconnected from chat server.", "error"));
 }
 
 function handleChatEnded({ from }) {
+  setCurrentChatPartnerId(null);
   import("./ui.js").then(({ appendMessage, showToast }) => {
     appendMessage("system", `User ${from} has left the chat`);
     showToast(`User ${from} ended chat`, "info");
   });
-  currentChatPartnerId = null;
-  // Hide chat UI
+  
   const chatUserElem = document.getElementById("currentChatUser");
   if (chatUserElem) chatUserElem.textContent = "";
   document.getElementById("chatWindow").style.display = "none";
   document.getElementById("chatWithBox").style.display = "none";
-  document.getElementById("reportChatBtn").style.display = "none";
+  const reportBtn = document.getElementById("reportChatBtn");
+  if (reportBtn) reportBtn.style.display = "none";
   document.getElementById("targetUserId").value = "";
 }
 
 function handleRequestResult({ status, by }) {
   import("./ui.js").then(({ showToast, showSection, clearChat }) => {
     if (status === "accepted") {
-      currentChatPartnerId = by;
+      setCurrentChatPartnerId(by);
       document.getElementById("currentChatUser").textContent = by;
       showSection("chatSection");
       clearChat();
       document.getElementById("chatWindow").style.display = "block";
       document.getElementById("chatWithBox").style.display = "block";
-      document.getElementById("reportChatBtn").style.display = "inline-block";
+      const reportBtn = document.getElementById("reportChatBtn");
+      if (reportBtn) reportBtn.style.display = "inline-block";
       showToast(`Chat request accepted by ${by}`, "success");
     } else if (status === "rejected") {
       showToast(`User ${by} rejected your chat request.`, "error");
@@ -133,7 +129,6 @@ function handleRequestResult({ status, by }) {
   });
 }
 
-// Registration handler
 export function handleRegister(event) {
   event.preventDefault();
   const username = document.getElementById("regUsername")?.value.trim();
@@ -156,7 +151,6 @@ export function handleRegister(event) {
     .then((data) => {
       if (data.message) {
         showToast("Registration successful!", "success");
-        // Optionally toggle UI back to login form here
         import("./ui.js").then(({ setLoginState }) => setLoginState(false));
       } else {
         throw new Error(data.error || "Registration failed");
@@ -167,11 +161,9 @@ export function handleRegister(event) {
     });
 }
 
-// Logout handler
 export function handleLogout() {
   const refreshToken = localStorage.getItem("refresh_token");
   if (!refreshToken) {
-    // No refresh token found, just clean up UI
     import("./ui.js").then(({ setLoginState, showToast }) => {
       setLoginState(false);
       showToast("Logged out", "success");
@@ -184,6 +176,9 @@ export function handleLogout() {
   })
     .then(() => {
       localStorage.clear();
+      setCurrentUser(null);
+      setCurrentChatPartnerId(null);
+      setSocket(null);
       import("./ui.js").then(({ setLoginState, showToast }) => {
         setLoginState(false);
         showToast("Logged out successfully", "success");
@@ -191,6 +186,9 @@ export function handleLogout() {
     })
     .catch(() => {
       localStorage.clear();
+      setCurrentUser(null);
+      setCurrentChatPartnerId(null);
+      setSocket(null);
       import("./ui.js").then(({ setLoginState, showToast }) => {
         setLoginState(false);
         showToast("Logged out (with error)", "success");
