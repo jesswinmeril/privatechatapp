@@ -135,6 +135,7 @@ async function loadUsersList() {
           isAdmin ? "Demote" : "Promote"
         }</button>`
         : "Not allowed";
+      console.log({ canDelete, canPromoteDemote, isAdmin, username, myUsername, isMasterAdmin });
 
       html += `
         <tr>
