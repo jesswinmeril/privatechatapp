@@ -3,7 +3,7 @@
 import { apiFetchWithRefresh } from "./api.js";
 import { showToast, setLoginState, clearChat, showSection } from "./ui.js";
 import { initSocket } from "./socket.js";
-import { setCurrentUser, getCurrentUser, setSocket, getSocket } from './state.js';
+import { setCurrentUser, getCurrentUser, setSocket, getSocket, setCurrentChatPartnerId, getCurrentChatPartnerId } from './state.js';
 
 /**
  * Handles login form submission
@@ -71,7 +71,7 @@ function handleRequestReceived({ from }) {
   const socket = getSocket();
   if (confirm(`User ${from} wants to chat. Accept?`)) {
     socket.emit("request_response", { accepted: true, to: from });
-    setCurrentChatId(from);
+    setCurrentChatPartnerId(from);
 
     import("./ui.js").then(({ showSection, clearChat }) => {
       showSection("chatSection");
@@ -94,7 +94,7 @@ function handleDisconnect() {
 }
 
 function handleChatEnded({ from }) {
-  setCurrentChatId(null);
+  setCurrentChatPartnerId(null);
   import("./ui.js").then(({ appendMessage, showToast }) => {
     appendMessage("system", `User ${from} has left the chat`);
     showToast(`User ${from} ended chat`, "info");
@@ -112,7 +112,7 @@ function handleChatEnded({ from }) {
 function handleRequestResult({ status, by }) {
   import("./ui.js").then(({ showToast, showSection, clearChat }) => {
     if (status === "accepted") {
-      setCurrentChatId(by);
+      setCurrentChatPartnerId(by);
       document.getElementById("currentChatUser").textContent = by;
       showSection("chatSection");
       clearChat();
@@ -177,7 +177,7 @@ export function handleLogout() {
     .then(() => {
       localStorage.clear();
       setCurrentUser(null);
-      setCurrentChatId(null);
+      setCurrentChatPartnerId(null);
       setSocket(null);
       import("./ui.js").then(({ setLoginState, showToast }) => {
         setLoginState(false);
@@ -187,7 +187,7 @@ export function handleLogout() {
     .catch(() => {
       localStorage.clear();
       setCurrentUser(null);
-      setCurrentChatId(null);
+      setCurrentChatPartnerId(null);
       setSocket(null);
       import("./ui.js").then(({ setLoginState, showToast }) => {
         setLoginState(false);
