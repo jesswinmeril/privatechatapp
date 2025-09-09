@@ -3,15 +3,6 @@
 let currentUser = null;
 let currentChatId = null;
 let socket = null;
-let currentChatPartnerId = null;
-
-export function setCurrentChatPartnerId(id) { 
-    currentChatPartnerId = id; 
-}
-
-export function getCurrentChatPartnerId() { 
-    return currentChatPartnerId; 
-}
 
 export function setCurrentUser(user) {
   currentUser = user;
